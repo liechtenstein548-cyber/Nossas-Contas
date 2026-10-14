@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Outer Card / Bill Base -->
+    <path
+        android:fillColor="#2563EB"
+        android:pathData="M34,30 C30.68,30 28,32.68 28,36 L28,72 C28,75.32 30.68,78 34,78 L74,78 C77.32,78 80,75.32 80,72 L80,36 C80,32.68 77.32,30 74,30 Z" />
+
+    <!-- Top Card Strip -->
+    <path
+        android:fillColor="#3B82F6"
+        android:pathData="M28,42 L80,42 L80,48 L28,48 Z" />
+
+    <!-- Chip / Checkmark Emblem -->
+    <path
+        android:fillColor="#10B981"
+        android:pathData="M36,54 L44,54 C46.2,54 48,55.8 48,58 L48,64 C48,66.2 46.2,68 44,68 L36,68 C33.8,68 32,66.2 32,64 L32,58 C32,55.8 33.8,54 36,54 Z" />
+
+    <!-- Lines on Card -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,58 L72,58 L72,60 L54,60 Z" />
+    <path
+        android:fillColor="#93C5FD"
+        android:pathData="M54,64 L66,64 L66,66 L54,66 Z" />
+</vector>

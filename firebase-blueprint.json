@@ -1,0 +1,108 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User account profile and active space reference",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "The user UID" },
+        "email": { "type": "string", "description": "User email address" },
+        "displayName": { "type": "string", "description": "User display name" },
+        "activeSpaceId": { "type": "string", "description": "ID of currently active synchronized space" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp when user profile was created (submitted as FieldValue.serverTimestamp())" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Timestamp when user profile was last updated (submitted as FieldValue.serverTimestamp())" }
+      },
+      "required": ["id", "email", "activeSpaceId", "createdAt", "updatedAt"]
+    },
+    "Space": {
+      "title": "Space",
+      "description": "Shared workspace or household for bills and profiles synchronization between users",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier of the space" },
+        "name": { "type": "string", "description": "Display name of the space" },
+        "code": { "type": "string", "description": "6-character share code to invite another user" },
+        "ownerId": { "type": "string", "description": "UID of the space creator" },
+        "memberUids": { "type": "array", "description": "List of user UIDs authorized to view and edit this space" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp (submitted as FieldValue.serverTimestamp())" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp (submitted as FieldValue.serverTimestamp())" }
+      },
+      "required": ["id", "name", "code", "ownerId", "memberUids", "createdAt", "updatedAt"]
+    },
+    "Bill": {
+      "title": "Bill",
+      "description": "Monthly bill entry within a space",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Bill document identifier" },
+        "spaceId": { "type": "string", "description": "Parent space ID" },
+        "name": { "type": "string", "description": "Name or title of the bill" },
+        "amount": { "type": "number", "description": "Monetary amount in BRL (>= 0)" },
+        "dueDate": { "type": "string", "description": "Due date in YYYY-MM-DD format" },
+        "monthYear": { "type": "string", "description": "Reference month in YYYY-MM format" },
+        "category": { "type": "string", "description": "Category name of the bill" },
+        "isPaid": { "type": "boolean", "description": "Whether the bill is paid" },
+        "profileName": { "type": "string", "description": "Display name of the profile assigned to the bill" },
+        "isRecurring": { "type": "boolean", "description": "Whether the bill is recurring" },
+        "memberUids": { "type": "array", "description": "Denormalized array of authorized member UIDs for subcollection security" },
+        "createdBy": { "type": "string", "description": "User UID who created the bill" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp (submitted as FieldValue.serverTimestamp())" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp (submitted as FieldValue.serverTimestamp())" }
+      },
+      "required": ["id", "spaceId", "name", "amount", "dueDate", "monthYear", "category", "isPaid", "memberUids", "createdBy", "createdAt", "updatedAt"]
+    },
+    "Profile": {
+      "title": "Profile",
+      "description": "User profile inside the shared space",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Profile identifier" },
+        "spaceId": { "type": "string", "description": "Parent space ID" },
+        "name": { "type": "string", "description": "Name of the person/profile" },
+        "colorHex": { "type": "string", "description": "Hex color code for the profile avatar tag" },
+        "memberUids": { "type": "array", "description": "Denormalized array of authorized space member UIDs" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Update timestamp" }
+      },
+      "required": ["id", "spaceId", "name", "colorHex", "memberUids", "createdAt", "updatedAt"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Custom expense category for organizing bills",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Category identifier" },
+        "spaceId": { "type": "string", "description": "Parent space ID" },
+        "name": { "type": "string", "description": "Category name" },
+        "colorHex": { "type": "string", "description": "Hex color code for the category" },
+        "icon": { "type": "string", "description": "Icon key name" },
+        "memberUids": { "type": "array", "description": "Denormalized array of authorized space member UIDs" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Update timestamp" }
+      },
+      "required": ["id", "spaceId", "name", "colorHex", "memberUids", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User personal profiles mapped to user UID"
+    },
+    "/spaces/{spaceId}": {
+      "schema": { "$ref": "#/entities/Space" },
+      "description": "Shared workspace containing bills, profiles, and custom categories"
+    },
+    "/spaces/{spaceId}/bills/{billId}": {
+      "schema": { "$ref": "#/entities/Bill" },
+      "description": "Bills belonging to a specific shared space"
+    },
+    "/spaces/{spaceId}/profiles/{profileId}": {
+      "schema": { "$ref": "#/entities/Profile" },
+      "description": "Profiles belonging to a specific shared space"
+    },
+    "/spaces/{spaceId}/categories/{categoryId}": {
+      "schema": { "$ref": "#/entities/Category" },
+      "description": "Categories registered in a specific shared space"
+    }
+  }
+}

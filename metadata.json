@@ -1,0 +1,6 @@
+{
+  "name": "Nossas Contas",
+  "description": "Controle minimalista de contas mensais, acompanhamento financeiro, divisão por categorias e perfis.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

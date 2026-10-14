@@ -1,0 +1,167 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuthenticated() {
+      return request.auth != null && request.auth.uid != null;
+    }
+
+    function isUser(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidTimestamp(val) {
+      return val is timestamp && val <= request.time;
+    }
+
+    // ----------------------------------------------------
+    // User schema validation
+    // ----------------------------------------------------
+    function isValidUser(data, userId) {
+      return data.keys().hasAll(['id', 'email', 'activeSpaceId', 'createdAt', 'updatedAt'])
+        && data.id == userId
+        && data.email is string
+        && data.activeSpaceId is string
+        && isValidTimestamp(data.createdAt)
+        && isValidTimestamp(data.updatedAt);
+    }
+
+    match /users/{userId} {
+      allow read: if isUser(userId);
+      allow create: if isUser(userId) && isValidUser(request.resource.data, userId);
+      allow update: if isUser(userId) && isValidUser(request.resource.data, userId);
+      allow delete: if false;
+    }
+
+    // ----------------------------------------------------
+    // Space schema validation
+    // ----------------------------------------------------
+    function isValidSpace(data) {
+      return data.keys().hasAll(['id', 'name', 'code', 'ownerId', 'memberUids', 'createdAt', 'updatedAt'])
+        && data.id is string && data.id.size() > 0
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 60
+        && data.code is string && data.code.size() >= 4 && data.code.size() <= 12
+        && data.ownerId is string && data.ownerId.size() > 0
+        && data.memberUids is list && data.memberUids.size() > 0
+        && isValidTimestamp(data.createdAt)
+        && isValidTimestamp(data.updatedAt);
+    }
+
+    match /spaces/{spaceId} {
+      allow read: if isAuthenticated() && (
+        resource == null ||
+        (request.auth.uid in resource.data.memberUids) ||
+        (resource.data.code is string && resource.data.code.size() > 0)
+      );
+
+      allow create: if isAuthenticated()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.auth.uid in request.resource.data.memberUids
+        && isValidSpace(request.resource.data);
+
+      allow update: if isAuthenticated()
+        && (
+          (request.auth.uid in resource.data.memberUids) ||
+          (request.auth.uid in request.resource.data.memberUids)
+        )
+        && isValidSpace(request.resource.data);
+
+      allow delete: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
+
+      // ----------------------------------------------------
+      // Bills subcollection
+      // ----------------------------------------------------
+      function isValidBill(data, sId) {
+        return data.keys().hasAll(['id', 'spaceId', 'name', 'amount', 'dueDate', 'monthYear', 'category', 'isPaid', 'memberUids', 'createdBy', 'createdAt', 'updatedAt'])
+          && data.id is string && data.id.size() > 0
+          && data.spaceId == sId
+          && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+          && (data.amount is int || data.amount is float) && data.amount >= 0
+          && data.dueDate is string && (data.dueDate.size() == 10 || data.dueDate.size() == 0 || data.dueDate == 'SEM_VENCIMENTO')
+          && data.monthYear is string && data.monthYear.size() == 7
+          && data.category is string && data.category.size() > 0
+          && data.isPaid is bool
+          && data.memberUids is list
+          && request.auth.uid in data.memberUids
+          && data.createdBy is string
+          && isValidTimestamp(data.createdAt)
+          && isValidTimestamp(data.updatedAt);
+      }
+
+      match /bills/{billId} {
+        allow read: if isAuthenticated() && (
+          resource == null ||
+          (!('memberUids' in resource.data)) ||
+          (request.auth.uid in resource.data.memberUids)
+        );
+
+        allow create: if isAuthenticated()
+          && request.resource.data.createdBy == request.auth.uid
+          && isValidBill(request.resource.data, spaceId);
+
+        allow update: if isAuthenticated()
+          && ('memberUids' in resource.data && request.auth.uid in resource.data.memberUids)
+          && isValidBill(request.resource.data, spaceId);
+
+        allow delete: if isAuthenticated() && ('memberUids' in resource.data && request.auth.uid in resource.data.memberUids);
+      }
+
+      // ----------------------------------------------------
+      // Profiles subcollection
+      // ----------------------------------------------------
+      function isValidProfile(data, sId) {
+        return data.keys().hasAll(['id', 'spaceId', 'name', 'colorHex', 'memberUids', 'createdAt', 'updatedAt'])
+          && data.id is string && data.id.size() > 0
+          && data.spaceId == sId
+          && data.name is string && data.name.size() > 0 && data.name.size() <= 50
+          && data.colorHex is string && data.colorHex.size() >= 4
+          && data.memberUids is list
+          && request.auth.uid in data.memberUids
+          && isValidTimestamp(data.createdAt)
+          && isValidTimestamp(data.updatedAt);
+      }
+
+      match /profiles/{profileId} {
+        allow read: if isAuthenticated() && (
+          resource == null ||
+          (!('memberUids' in resource.data)) ||
+          (request.auth.uid in resource.data.memberUids)
+        );
+
+        allow create: if isAuthenticated() && isValidProfile(request.resource.data, spaceId);
+        allow update: if isAuthenticated()
+          && (!('memberUids' in resource.data) || request.auth.uid in resource.data.memberUids)
+          && isValidProfile(request.resource.data, spaceId);
+        allow delete: if isAuthenticated() && (!('memberUids' in resource.data) || request.auth.uid in resource.data.memberUids);
+      }
+
+      // ----------------------------------------------------
+      // Categories subcollection
+      // ----------------------------------------------------
+      function isValidCategory(data, sId) {
+        return data.keys().hasAll(['id', 'spaceId', 'name', 'colorHex', 'memberUids', 'createdAt', 'updatedAt'])
+          && data.id is string && data.id.size() > 0
+          && data.spaceId == sId
+          && data.name is string && data.name.size() > 0 && data.name.size() <= 50
+          && data.colorHex is string && data.colorHex.size() >= 4
+          && data.memberUids is list
+          && request.auth.uid in data.memberUids
+          && isValidTimestamp(data.createdAt)
+          && isValidTimestamp(data.updatedAt);
+      }
+
+      match /categories/{categoryId} {
+        allow read: if isAuthenticated() && (
+          resource == null ||
+          (!('memberUids' in resource.data)) ||
+          (request.auth.uid in resource.data.memberUids)
+        );
+
+        allow create: if isAuthenticated() && isValidCategory(request.resource.data, spaceId);
+        allow update: if isAuthenticated()
+          && (!('memberUids' in resource.data) || request.auth.uid in resource.data.memberUids)
+          && isValidCategory(request.resource.data, spaceId);
+        allow delete: if isAuthenticated() && (!('memberUids' in resource.data) || request.auth.uid in resource.data.memberUids);
+      }
+    }
+  }
+}
